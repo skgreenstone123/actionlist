@@ -1,0 +1,446 @@
+<template>
+  <v-card>
+    <v-card-title>
+      Ticket Applications
+      <v-spacer></v-spacer>
+      <v-text-field v-model="search" append-icon="search" label="Search" single-line hide-details></v-text-field>
+    </v-card-title>
+
+    <!-- <v-list>
+      <v-list-tile      
+        v-for="item in playlist" :key="item.title" v-show="item.display">
+        <v-list-tile-content>
+          <v-list-tile-title>{{ item.artist }} - {{ item.title }}</v-list-tile-title>
+        </v-list-tile-content>
+        <v-spacer></v-spacer>
+        {{ item.howl.duration }}
+      </v-list-tile>
+    </v-list> -->
+    <!-- <v-container grid-list-md text-xs-center>
+        </v-container> -->
+    <v-data-table v-model="selected" :headers="headers" :items="tickets" :pagination.sync="pagination" :search="search" :rows-per-page-items=[10,20,35]
+      class="elevation-1">
+      <template slot="headers" slot-scope="props">
+        <tr>
+          <!-- <th>
+          <v-checkbox
+            :input-value="props.all"
+            :indeterminate="props.indeterminate"
+            primary
+            hide-details
+            @click.native="toggleAll"
+          ></v-checkbox>
+        </th> -->
+          <th v-for="header in props.headers" :key="header.text" :class="['column sortable', pagination.descending ? 'desc' : 'asc', header.value === pagination.sortBy ? 'active' : '']"
+            @click="changeSort(header.value)">
+            <v-icon small>arrow_upward</v-icon>
+            {{ header.text }}
+          </th>
+        </tr>
+      </template>
+      <template slot="items" slot-scope="props">
+        <!-- <td>
+          <v-checkbox
+            :input-value="props.selected"
+            primary
+            hide-details
+          ></v-checkbox>
+      </td>     -->
+        <td class="text-xs-right">{{ props.item.shipmentDate }}</td>
+        <td class="text-xs-right">{{ props.item.inoutbound }}</td>
+        <td class="text-xs-right">{{ props.item.ticketnumber }}</td>
+        <td class="text-xs-right">{{ props.item.account }}</td>
+        <td class="text-xs-right">{{ props.item.accountDescription }}</td>
+        <td class="text-xs-right">{{ props.item.shipfrom }}</td>
+        <td class="text-xs-right">{{ props.item.location }}</td>
+        <td class="text-xs-right">{{ props.item.netweight }}</td>
+        <td class="text-xs-right">{{ props.item.netquantity }}</td>
+        <td class="text-xs-right">{{ props.item.product }}</td>
+        <td class="justify-center layout px-0">
+          <v-icon small class="mr-2" @click="editItem(props.item)">
+            edit
+          </v-icon>
+          <v-icon small @click="deleteItem(props.item)">
+            delete
+          </v-icon>
+        </td>
+      </template>
+      <template slot="no-data">
+        <v-alert :value="true" color="error" icon="warning">
+          Sorry, nothing to display here :(
+        </v-alert>
+      </template>
+      <v-alert slot="no-results" :value="true" color="error" icon="warning">
+        Your search for "{{ search }}" found no results.
+      </v-alert>
+    </v-data-table>
+    <!-- <v-layout row wrap>
+      <v-flex xs1>
+        <v-card height="50px" dark color="green darken-1">
+          <v-card-text class="cell-font-size">Shipment Date</v-card-text>
+        </v-card>
+      </v-flex>
+      <v-flex xs1>
+        <v-card height="50px" dark color="green darken-1">
+          <v-card-text class="cell-font-size">In/Outbound</v-card-text>
+        </v-card>
+      </v-flex>
+      <v-flex xs1>
+        <v-card height="50px" dark color="green darken-1">
+          <v-card-text class="cell-font-size">Ticket Number</v-card-text>
+        </v-card>
+      </v-flex>
+      <v-flex xs1>
+        <v-card height="50px" dark color="green darken-1">
+          <v-card-text class="cell-font-size">Account</v-card-text>
+        </v-card>
+      </v-flex>
+      <v-flex xs2>
+        <v-card height="50px" dark color="green darken-1">
+          <v-card-text class="cell-font-size">Account Description</v-card-text>
+        </v-card>
+      </v-flex>
+      <v-flex xs2>
+        <v-card height="50px" dark color="green darken-1">
+          <v-card-text class="cell-font-size">Ship From</v-card-text>
+        </v-card>
+      </v-flex>
+      <v-flex xs1>
+        <v-card height="50px" dark color="green darken-1">
+          <v-card-text class="cell-font-size">Location</v-card-text>
+        </v-card>
+      </v-flex>
+      <v-flex xs1>
+        <v-card height="50px" dark color="green darken-1">
+          <v-card-text class="cell-font-size">Net Weight</v-card-text>
+        </v-card>
+      </v-flex>
+      <v-flex xs1>
+        <v-card height="50px" dark color="green darken-1">
+          <v-card-text class="cell-font-size">Net Quantity</v-card-text>
+        </v-card>
+      </v-flex>
+      <v-flex xs1>
+        <v-card height="50px" dark color="green darken-1">
+          <v-card-text class="cell-font-size">Product</v-card-text>
+        </v-card>
+      </v-flex>
+    </v-layout> -->
+
+    <!-- <v-layout row wrap>      
+    <v-flex xs1 v-for="item in playlist" :key="item.account">
+        <v-card height="50px" color="green lighten-5">
+          <v-card-text class="px-0">{{ item.shipmentDate }}</v-card-text>
+        </v-card>
+    </v-flex>
+    </v-layout> -->
+    <v-dialog v-model="dialog" max-width="500px">
+      <v-card>
+        <v-card-title>
+          <span class="headline">{{ formTitle }}</span>
+        </v-card-title>
+
+        <v-card-text>
+          <v-container grid-list-md>
+            <v-layout wrap>
+              <v-flex xs12 sm6 md4>
+                <v-text-field v-model="editedItem.ticketnumber" label="Ticket Number"></v-text-field>
+              </v-flex>
+              <v-flex xs12 sm6 md4>
+                <v-text-field v-model="editedItem.account" label="Account"></v-text-field>
+              </v-flex>
+              <v-flex xs12 sm6 md4>
+                <v-text-field v-model="editedItem.accountDescription" label="Description"></v-text-field>
+              </v-flex>
+              <v-flex xs12 sm6 md4>
+                <v-text-field v-model="editedItem.shipfrom" label="Ship From"></v-text-field>
+              </v-flex>
+              <v-flex xs12 sm6 md4>
+                <v-text-field v-model="editedItem.location" label="Location"></v-text-field>
+              </v-flex>
+            </v-layout>
+          </v-container>
+        </v-card-text>
+
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="blue darken-1" flat @click.native="close">Cancel</v-btn>
+          <v-btn color="blue darken-1" flat @click.native="save">Save</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+  </v-card>
+
+
+</template>
+
+<script>
+  export default {
+    data: () => ({
+      dialog: false,
+      editedIndex: -1,
+      editedItem: {
+        ticketnumber: "0000123",
+        account: "A Growsem",
+        accountDescription: "Adam Growsem",
+        shipfrom: "Adam Growsem",
+        location: "Central Depot",
+        netweight: "56,000.00 LB",
+        netquantity: "76,000.00 LB",
+        product: "01- Yellow Corn"
+      },
+      defaultItem: {
+        ticketnumber: "0000123",
+        account: "A Growsem",
+        accountDescription: "Adam Growsem",
+        shipfrom: "Adam Growsem",
+        location: "Central Depot",
+        netweight: "56,000.00 LB",
+        netquantity: "76,000.00 LB",
+        product: "01- Yellow Corn"
+      },
+      search: "",
+      pagination: {
+        sortBy: "ticketnumber"
+      },
+      selected: [],
+      headers: [
+        { text: "Shipment Date", value: "shipmentDate" },
+        { text: "In/Out Bound", value: "inoutbound" },
+        { text: "Ticket Number", value: "ticketnumber" },
+        { text: "Account", value: "account" },
+        { text: "Description", value: "accountDescription" },
+        { text: "Ship From", value: "shipfrom" },
+        { text: "Location", value: "location" },
+        { text: "Weight (Net)", value: "netweight" },
+        { text: "Quantity (Net) ", value: "netquantity" },
+        { text: "Product", value: "product" }
+      ],
+      tickets: [
+        {
+          shipmentDate: "08/21/2018",
+          inoutbound: "CC",
+          ticketnumber: "0000123",
+          account: "A Growsem",
+          accountDescription: "Adam Growsem",
+          shipfrom: "Adam Growsem",
+          location: "Central Depot",
+          netweight: "56,000.00 LB",
+          netquantity: "76,000.00 LB",
+          product: "01- Yellow Corn"
+        },
+        {
+          shipmentDate: "08/21/2018",
+          inoutbound: "CC",
+          ticketnumber: "0000124",
+          account: "A Growsem",
+          accountDescription: "Adam Growsem",
+          shipfrom: "Adam Growsem",
+          location: "Central Depot",
+          netweight: "56,000.00 LB",
+          netquantity: "76,000.00 LB",
+          product: "01- Yellow Corn"
+        },
+        {
+          shipmentDate: "08/21/2018",
+          inoutbound: "CC",
+          ticketnumber: "0000125",
+          account: "A Growsem",
+          accountDescription: "Adam Growsem",
+          shipfrom: "Adam Growsem",
+          location: "Central Depot",
+          netweight: "56,000.00 LB",
+          netquantity: "76,000.00 LB",
+          product: "01- Yellow Corn"
+        },
+        {
+          shipmentDate: "08/21/2018",
+          inoutbound: "CC",
+          ticketnumber: "0000126",
+          account: "A Growsem",
+          accountDescription: "Adam Growsem",
+          shipfrom: "Adam Growsem",
+          location: "Central Depot",
+          netweight: "56,000.00 LB",
+          netquantity: "76,000.00 LB",
+          product: "01- Yellow Corn"
+        },
+        {
+          shipmentDate: "08/21/2018",
+          inoutbound: "CC",
+          ticketnumber: "0000127",
+          account: "A Growsem",
+          accountDescription: "Adam Growsem",
+          shipfrom: "Adam Growsem",
+          location: "Central Depot",
+          netweight: "56,000.00 LB",
+          netquantity: "76,000.00 LB",
+          product: "01- Yellow Corn"
+        },
+        {
+          shipmentDate: "08/21/2018",
+          inoutbound: "CC",
+          ticketnumber: "0000128",
+          account: "A Growsem",
+          accountDescription: "Adam Growsem",
+          shipfrom: "Adam Growsem",
+          location: "Central Depot",
+          netweight: "56,000.00 LB",
+          netquantity: "76,000.00 LB",
+          product: "01- Yellow Corn"
+        },
+        {
+          shipmentDate: "08/21/2018",
+          inoutbound: "CC",
+          ticketnumber: "0000129",
+          account: "A Growsem",
+          accountDescription: "Adam Growsem",
+          shipfrom: "Adam Growsem",
+          location: "Central Depot",
+          netweight: "56,000.00 LB",
+          netquantity: "76,000.00 LB",
+          product: "01- Yellow Corn"
+        },
+        {
+          shipmentDate: "08/21/2018",
+          inoutbound: "CC",
+          ticketnumber: "0000130",
+          account: "A Growsem",
+          accountDescription: "Adam Growsem",
+          shipfrom: "Adam Growsem",
+          location: "Central Depot",
+          netweight: "56,000.00 LB",
+          netquantity: "76,000.00 LB",
+          product: "01- Yellow Corn"
+        },
+        {
+          shipmentDate: "08/21/2018",
+          inoutbound: "CC",
+          ticketnumber: "0000131",
+          account: "A Growsem",
+          accountDescription: "Adam Growsem",
+          shipfrom: "Adam Growsem",
+          location: "Central Depot",
+          netweight: "56,000.00 LB",
+          netquantity: "76,000.00 LB",
+          product: "01- Yellow Corn"
+        },
+        {
+          shipmentDate: "08/21/2018",
+          inoutbound: "CC",
+          ticketnumber: "0000132",
+          account: "A Growsem",
+          accountDescription: "Adam Growsem",
+          shipfrom: "Adam Growsem",
+          location: "Central Depot",
+          netweight: "56,000.00 LB",
+          netquantity: "76,000.00 LB",
+          product: "01- Yellow Corn"
+        },
+        {
+          shipmentDate: "08/21/2018",
+          inoutbound: "CC",
+          ticketnumber: "0000133",
+          account: "A Growsem",
+          accountDescription: "Adam Growsem",
+          shipfrom: "Adam Growsem",
+          location: "Central Depot",
+          netweight: "56,000.00 LB",
+          netquantity: "76,000.00 LB",
+          product: "01- Yellow Corn"
+        },
+        {
+          shipmentDate: "08/21/2018",
+          inoutbound: "CC",
+          ticketnumber: "0000134",
+          account: "A Growsem",
+          accountDescription: "Adam Growsem",
+          shipfrom: "Adam Growsem",
+          location: "Central Depot",
+          netweight: "56,000.00 LB",
+          netquantity: "76,000.00 LB",
+          product: "01- Yellow Corn"
+        },
+        {
+          shipmentDate: "08/21/2018",
+          inoutbound: "CC",
+          ticketnumber: "0000135",
+          account: "A Growsem",
+          accountDescription: "Adam Growsem",
+          shipfrom: "Adam Growsem",
+          location: "Central Depot",
+          netweight: "56,000.00 LB",
+          netquantity: "76,000.00 LB",
+          product: "01- Yellow Corn"
+        }
+      ]
+    }),
+    computed: {
+      formTitle() {
+        return this.editedIndex === -1 ? "New Item" : "Edit Item";
+      }
+    },
+
+    watch: {
+      dialog(val) {
+        val || this.close();
+      }
+    },
+
+    created() {
+      this.initialize();
+    },
+    methods: {
+      initialize() {
+        return this.tickets;
+      },
+      toggleAll() {
+        if (this.selected.length) this.selected = [];
+        else this.selected = this.desserts.slice();
+      },
+      changeSort(column) {
+        if (this.pagination.sortBy === column) {
+          this.pagination.descending = !this.pagination.descending;
+        } else {
+          this.pagination.sortBy = column;
+          this.pagination.descending = false;
+        }
+      },
+      editItem(item) {
+        this.editedIndex = this.tickets.indexOf(item);
+        this.editedItem = Object.assign({}, item);
+        this.dialog = true;
+      },
+
+      deleteItem(item) {
+        const index = this.tickets.indexOf(item);
+        confirm("Are you sure you want to delete this item?") &&
+          this.tickets.splice(index, 1);
+      },
+
+      close() {
+        this.dialog = false;
+        setTimeout(() => {
+          this.editedItem = Object.assign({}, this.defaultItem);
+          this.editedIndex = -1;
+        }, 300);
+      },
+
+      save() {
+        if (this.editedIndex > -1) {
+          Object.assign(this.desserts[this.editedIndex], this.editedItem);
+        } else {
+          this.desserts.push(this.editedItem);
+        }
+        this.close();
+      }
+    }
+  };
+</script>
+
+<style scoped>
+  .cell-font-size {
+    font-size: 12px;
+  }
+</style>
